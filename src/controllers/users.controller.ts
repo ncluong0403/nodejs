@@ -3,11 +3,14 @@ import usersService from '~/services/users.services'
 import { ParamsDictionary } from 'express-serve-static-core'
 import {
   EmailVerifyRequestBody,
+  FollowUserReqBody,
+  GetProfileUserReqParam,
   LoginRequestBody,
   LogoutRequestBody,
   RegisterRequestBody,
   ResetPasswordRequestBody,
   TokenPayload,
+  UnFollowReqParam,
   UpdateProfileRequestBody
 } from '~/types/User.requests'
 import databaseService from '~/services/database.services'
@@ -116,6 +119,13 @@ export const getMyProfileController = async (req: Request, res: Response) => {
   return res.json(result)
 }
 
+export const getProfileUserController = async (req: Request<GetProfileUserReqParam>, res: Response) => {
+  const { username } = req.params
+
+  const result = await usersService.getProfileUser(username)
+  return res.json(result)
+}
+
 export const updateMyProfileController = async (
   req: Request<ParamsDictionary, any, UpdateProfileRequestBody>,
   res: Response
@@ -128,4 +138,20 @@ export const updateMyProfileController = async (
     message: USERS_MESSAGES.UPDATE_ME_SUCCESS,
     result: user
   })
+}
+
+export const followUserController = async (req: Request<ParamsDictionary, any, FollowUserReqBody>, res: Response) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const { followed_user_id } = req.body
+  const result = await usersService.follow(user_id, followed_user_id)
+
+  return res.json(result)
+}
+
+export const unFollowUserController = async (req: Request<UnFollowReqParam>, res: Response) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const { user_id: followed_user_id } = req.params
+  const result = await usersService.unFollow(user_id, followed_user_id)
+
+  return res.json(result)
 }

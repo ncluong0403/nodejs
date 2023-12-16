@@ -10,6 +10,7 @@ import { USERS_MESSAGES } from '~/constants/errorMessages'
 import RefreshToken from '~/models/schemas/RefeshToken.schema'
 import { ObjectId } from 'mongodb'
 import { config } from 'dotenv'
+import HTTP_STATUS from '~/constants/httpStatus'
 
 // Config ENV
 config()
@@ -96,6 +97,7 @@ class UsersService {
       new User({
         ...payload,
         _id: user_id,
+        username: `User${user_id}`,
         email_verify_token,
         date_of_birth: new Date(payload.date_of_birth),
         password: hashPassword(payload.password)
@@ -237,6 +239,30 @@ class UsersService {
     }
   }
 
+  async getProfileUser(username: string) {
+    const user = await databaseService.users.findOne(
+      { username },
+      {
+        projection: {
+          password: 0,
+          forgot_password_token: 0,
+          email_verify_token: 0,
+          verify: 0
+        }
+      }
+    )
+    if (user === null) {
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.USER_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
+    }
+    return {
+      message: USERS_MESSAGES.GET_PROFILE_USER_SUCCESS,
+      user
+    }
+  }
+
   async updateMyProfile(user_id: string, payload: UpdateProfileRequestBody) {
     const _payload = payload.date_of_birth ? { ...payload, date_of_birth: new Date(payload.date_of_birth) } : payload
     const user = await databaseService.users.findOneAndUpdate(
@@ -259,6 +285,50 @@ class UsersService {
       }
     )
     return user.value
+  }
+
+  async follow(user_id: string, followed_user_id: string) {
+    const follower = await databaseService.followers.findOne({
+      user_id: new ObjectId(user_id),
+      followed_user_id: new ObjectId(followed_user_id)
+    })
+
+    // Nếu user này chưa được follow trong db thì mới tiến hành insert
+    if (follower === null) {
+      await databaseService.followers.insertOne({
+        user_id: new ObjectId(user_id),
+        followed_user_id: new ObjectId(followed_user_id),
+        created_at: new Date()
+      })
+      return {
+        message: USERS_MESSAGES.FOLLOW_SUCCESS
+      }
+    }
+    // Nếu user đã đc follow thì return message followed
+    return {
+      message: USERS_MESSAGES.FOLLOWED
+    }
+  }
+
+  async unFollow(user_id: string, followed_user_id: string) {
+    const follower = await databaseService.followers.findOne({
+      user_id: new ObjectId(user_id),
+      followed_user_id: new ObjectId(followed_user_id)
+    })
+
+    if (follower !== null) {
+      return {
+        message: USERS_MESSAGES.ALREADY_UNFOLLOWED
+      }
+    }
+    // Nếu user đã follow thì tiến hành unfollow
+    await databaseService.followers.deleteOne({
+      user_id: new ObjectId(user_id),
+      followed_user_id: new ObjectId(followed_user_id)
+    })
+    return {
+      message: USERS_MESSAGES.UNFOLLOW_SUCCESS
+    }
   }
 }
 

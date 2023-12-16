@@ -1,12 +1,15 @@
 import { Router } from 'express'
 import {
+  followUserController,
   forgotPasswordController,
   getMyProfileController,
+  getProfileUserController,
   loginController,
   logoutController,
   registerController,
   resendVerifyEmailController,
   resetPasswordController,
+  unFollowUserController,
   updateMyProfileController,
   verifyEmailController,
   verifyForgotPasswordController
@@ -14,11 +17,13 @@ import {
 import { filterMiddleware } from '~/middlewares/common.middlewares'
 import {
   accessTokenValidator,
+  followValidator,
   forgotPasswordValidator,
   loginValidator,
   refreshTokenValidator,
   registerValidator,
   resetPasswordValidator,
+  unFollowValidator,
   updateMyProfileValidator,
   verifiedUserValidator,
   verifyEmailTokenValidator,
@@ -129,6 +134,43 @@ usersRouter.patch(
     'date_of_birth'
   ]),
   wrapRequestHandler(updateMyProfileController)
+)
+
+/**
+ * Description: Get profile user
+ * Path: /:username
+ * Method: GET
+ */
+usersRouter.get('/:username', wrapRequestHandler(getProfileUserController))
+
+/**
+ * Description: Follow someone
+ * Path: /follow
+ * Method: POST
+ * Headers: { Authorization: Bearer <accessToken> }
+ * Body: { followed_user_id: string}
+ */
+usersRouter.post(
+  '/follow',
+  accessTokenValidator,
+  verifiedUserValidator,
+  followValidator,
+  wrapRequestHandler(followUserController)
+)
+
+/**
+ * Description: UnFollow someone
+ * Path: /follow
+ * Method: DELETE
+ * Headers: { Authorization: Bearer <accessToken> }
+ * Body: { user_id: string}
+ */
+usersRouter.delete(
+  '/follow/:user_id',
+  accessTokenValidator,
+  verifiedUserValidator,
+  unFollowValidator,
+  wrapRequestHandler(unFollowUserController)
 )
 
 export default usersRouter
