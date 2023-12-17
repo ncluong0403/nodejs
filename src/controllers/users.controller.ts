@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import usersService from '~/services/users.services'
 import { ParamsDictionary } from 'express-serve-static-core'
 import {
+  ChangePasswordReqBody,
   EmailVerifyRequestBody,
   FollowUserReqBody,
   GetProfileUserReqParam,
@@ -18,6 +19,15 @@ import User from '~/models/schemas/User.schema'
 import { ObjectId } from 'mongodb'
 import { USERS_MESSAGES } from '~/constants/errorMessages'
 import { UserVerifyStatus } from '~/constants/enums'
+
+export const oAuthController = async (req: Request, res: Response) => {
+  const { code } = req.query
+
+  await usersService.oAuth(code as string)
+  return res.json({
+    message: USERS_MESSAGES.LOGIN_SUCCESS
+  })
+}
 
 export const loginController = async (req: Request<ParamsDictionary, any, LoginRequestBody>, res: Response) => {
   const user = req.user as User
@@ -152,6 +162,17 @@ export const unFollowUserController = async (req: Request<UnFollowReqParam>, res
   const { user_id } = req.decode_authorization as TokenPayload
   const { user_id: followed_user_id } = req.params
   const result = await usersService.unFollow(user_id, followed_user_id)
+
+  return res.json(result)
+}
+
+export const changePasswordController = async (
+  req: Request<ParamsDictionary, any, ChangePasswordReqBody>,
+  res: Response
+) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const { password } = req.body
+  const result = await usersService.changePassword(user_id, password)
 
   return res.json(result)
 }

@@ -6,6 +6,7 @@ import { ObjectId } from 'mongodb'
 import { UserVerifyStatus } from '~/constants/enums'
 import { USERS_MESSAGES } from '~/constants/errorMessages'
 import HTTP_STATUS from '~/constants/httpStatus'
+import { REGEX_USERNAME } from '~/constants/regex'
 import { ErrorWithStatus } from '~/models/Error'
 import databaseService from '~/services/database.services'
 import usersService from '~/services/users.services'
@@ -567,13 +568,18 @@ export const updateMyProfileValidator = validate(
           errorMessage: USERS_MESSAGES.USERNAME_MUST_BE_STRING
         },
         trim: true,
-        isLength: {
-          errorMessage: {
-            errorMessage: USERS_MESSAGES.USERNAME_LENGTH
-          },
-          options: {
-            min: 1,
-            max: 100
+        custom: {
+          options: async (value: string, { req }) => {
+            const user = await databaseService.users.findOne({
+              username: value
+            })
+            if (!REGEX_USERNAME.test(value)) {
+              throw Error(USERS_MESSAGES.USERNAME_INVALID)
+            }
+
+            if (user) {
+              throw Error(USERS_MESSAGES.USERNAME_EXISTED)
+            }
           }
         }
       },
@@ -593,5 +599,39 @@ export const followValidator = validate(
 export const unFollowValidator = validate(
   checkSchema({
     user_id: userIdSchema
+  })
+)
+
+export const changePassWordValidator = validate(
+  checkSchema({
+    old_password: {
+      ...passwordSchema,
+      custom: {
+        options: async (value, { req }) => {
+          const { user_id } = req.decode_authorization as TokenPayload
+          const user = await databaseService.users.findOne({
+            _id: new ObjectId(user_id)
+          })
+
+          if (!user) {
+            throw new ErrorWithStatus({
+              message: USERS_MESSAGES.USER_NOT_FOUND,
+              status: HTTP_STATUS.UNAUTHORIZED
+            })
+          }
+
+          const { password } = user
+          const isMatchPassword = hashPassword(value) === password
+          if (!isMatchPassword) {
+            throw new ErrorWithStatus({
+              message: USERS_MESSAGES.OLD_PASSWORD_NOT_MATCH,
+              status: HTTP_STATUS.UNAUTHORIZED
+            })
+          }
+        }
+      }
+    },
+    password: passwordSchema,
+    confirm_password: confirmPasswordSchema
   })
 )

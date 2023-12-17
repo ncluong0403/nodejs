@@ -1,11 +1,13 @@
 import { Router } from 'express'
 import {
+  changePasswordController,
   followUserController,
   forgotPasswordController,
   getMyProfileController,
   getProfileUserController,
   loginController,
   logoutController,
+  oAuthController,
   registerController,
   resendVerifyEmailController,
   resetPasswordController,
@@ -17,6 +19,7 @@ import {
 import { filterMiddleware } from '~/middlewares/common.middlewares'
 import {
   accessTokenValidator,
+  changePassWordValidator,
   followValidator,
   forgotPasswordValidator,
   loginValidator,
@@ -32,6 +35,14 @@ import {
 import { UpdateProfileRequestBody } from '~/types/User.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
 const usersRouter = Router()
+
+/**
+ * Description: Login with google
+ * Path: /oauth/google
+ * Method: GET
+ * Body: { code: string }
+ */
+usersRouter.get('/oauth/google', oAuthController)
 
 /**
  * Description: Login a user
@@ -160,7 +171,7 @@ usersRouter.post(
 
 /**
  * Description: UnFollow someone
- * Path: /follow
+ * Path: /follow/:user_id
  * Method: DELETE
  * Headers: { Authorization: Bearer <accessToken> }
  * Body: { user_id: string}
@@ -171,6 +182,21 @@ usersRouter.delete(
   verifiedUserValidator,
   unFollowValidator,
   wrapRequestHandler(unFollowUserController)
+)
+
+/**
+ * Description: Change password
+ * Path: /change-password
+ * Method: PUT
+ * Headers: { Authorization: Bearer <accessToken> }
+ * Body: { old_password: string, pass_word: string, confirm_password: string}
+ */
+usersRouter.put(
+  '/change-password',
+  accessTokenValidator,
+  verifiedUserValidator,
+  changePassWordValidator,
+  wrapRequestHandler(changePasswordController)
 )
 
 export default usersRouter

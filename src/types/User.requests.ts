@@ -34,6 +34,12 @@ export interface FollowUserReqBody {
   followed_user_id: string
 }
 
+export interface ChangePasswordReqBody {
+  old_password: string
+  password: string
+  new_password: string
+}
+
 export interface EmailVerifyRequestBody {
   email_verify_token: string
 }

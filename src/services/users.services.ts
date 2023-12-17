@@ -11,6 +11,7 @@ import RefreshToken from '~/models/schemas/RefeshToken.schema'
 import { ObjectId } from 'mongodb'
 import { config } from 'dotenv'
 import HTTP_STATUS from '~/constants/httpStatus'
+import axios from 'axios'
 
 // Config ENV
 config()
@@ -58,6 +59,36 @@ class UsersService {
     })
   }
 
+  private async getGoogleUserInfo(access_token: string, id_token: string) {
+    const { data } = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+      params: {
+        access_token,
+        alt: 'json'
+      },
+      headers: {
+        Authorization: `Bearer ${id_token}`
+      }
+    })
+    return data
+  }
+
+  private async getOAuthGoogleToken(code: string) {
+    const body = {
+      code,
+      client_id: process.env.GOOGLE_CLIENT_ID as string,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET as string,
+      redirect_uri: process.env.GOOGLE_REDIRECT_URI as string,
+      grant_type: 'authorization_code'
+    }
+
+    const { data } = await axios.post('https://oauth2.googleapis.com/token', body, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    })
+    return data
+  }
+
   private signAccessTokenAndRefreshToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
     return Promise.all([this.signAccessToken({ user_id, verify }), this.signRefreshToken({ user_id, verify })])
   }
@@ -71,6 +102,11 @@ class UsersService {
       accessToken,
       refreshToken
     }
+  }
+
+  async oAuth(code: string) {
+    const data = await this.getOAuthGoogleToken(code)
+    console.log('🚀 ~ data:', data)
   }
 
   private signForgotPasswordToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
@@ -160,6 +196,9 @@ class UsersService {
     ])
 
     const [accessToken, refreshToken] = token
+    await databaseService.refreshToken.insertOne(
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refreshToken })
+    )
 
     return {
       accessToken,
@@ -316,7 +355,8 @@ class UsersService {
       followed_user_id: new ObjectId(followed_user_id)
     })
 
-    if (follower !== null) {
+    // Nếu là null thì là k có trong db thì có nghĩa đã unfollow rồi
+    if (follower === null) {
       return {
         message: USERS_MESSAGES.ALREADY_UNFOLLOWED
       }
@@ -328,6 +368,24 @@ class UsersService {
     })
     return {
       message: USERS_MESSAGES.UNFOLLOW_SUCCESS
+    }
+  }
+
+  async changePassword(user_id: string, password: string) {
+    await databaseService.users.updateOne(
+      { _id: new ObjectId(user_id) },
+      {
+        $set: {
+          password: hashPassword(password)
+        },
+        $currentDate: {
+          updated_at: true
+        }
+      }
+    )
+
+    return {
+      message: USERS_MESSAGES.CHANGE_PASSWORD_SUCCESS
     }
   }
 }
