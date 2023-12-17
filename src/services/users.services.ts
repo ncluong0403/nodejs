@@ -69,7 +69,15 @@ class UsersService {
         Authorization: `Bearer ${id_token}`
       }
     })
-    return data
+    return data as {
+      email_verified: string
+      email: string
+      name: string
+      given_name: string
+      family_name: string
+      picture: string
+      locale: string
+    }
   }
 
   private async getOAuthGoogleToken(code: string) {
@@ -86,7 +94,10 @@ class UsersService {
         'Content-Type': 'application/x-www-form-urlencoded'
       }
     })
-    return data
+    return data as {
+      access_token: string
+      id_token: string
+    }
   }
 
   private signAccessTokenAndRefreshToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
@@ -105,8 +116,29 @@ class UsersService {
   }
 
   async oAuth(code: string) {
-    const data = await this.getOAuthGoogleToken(code)
-    console.log('🚀 ~ data:', data)
+    const { access_token, id_token } = await this.getOAuthGoogleToken(code)
+    const userInfo = await this.getGoogleUserInfo(access_token, id_token)
+    if (!userInfo.email_verified) {
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.GMAIL_NOT_VERIFIED,
+        status: HTTP_STATUS.BAD_REQUEST
+      })
+    }
+
+    const user = await databaseService.users.findOne({ email: userInfo.email })
+
+    // Neu ton tai thi cho login vao
+    if (user) {
+      const [access_token, refresh_token] = await this.signAccessTokenAndRefreshToken({
+        user_id: user._id.toString(),
+        verify: user.verify
+      })
+      await databaseService.refreshToken.insertOne(
+        new RefreshToken({ user_id: new ObjectId(user._id), token: refresh_token as string })
+      )
+    } else {
+      // Neu email chua ton tai thi tien hanh dang ki moi
+    }
   }
 
   private signForgotPasswordToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
