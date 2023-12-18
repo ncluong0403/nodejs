@@ -19,14 +19,15 @@ import User from '~/models/schemas/User.schema'
 import { ObjectId } from 'mongodb'
 import { USERS_MESSAGES } from '~/constants/errorMessages'
 import { UserVerifyStatus } from '~/constants/enums'
+import { config } from 'dotenv'
+
+config()
 
 export const oAuthController = async (req: Request, res: Response) => {
   const { code } = req.query
-
-  await usersService.oAuth(code as string)
-  return res.json({
-    message: USERS_MESSAGES.LOGIN_SUCCESS
-  })
+  const { access_token, refresh_token, newUser } = await usersService.oAuth(code as string)
+  const urlRedirect = `${process.env.GOOGLE_CLIENT_URI}?access_token=${access_token}&refresh_token=${refresh_token}&new_user=${newUser}`
+  return res.redirect(urlRedirect)
 }
 
 export const loginController = async (req: Request<ParamsDictionary, any, LoginRequestBody>, res: Response) => {

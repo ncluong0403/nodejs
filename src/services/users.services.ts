@@ -12,6 +12,7 @@ import { ObjectId } from 'mongodb'
 import { config } from 'dotenv'
 import HTTP_STATUS from '~/constants/httpStatus'
 import axios from 'axios'
+import { USER } from '~/constants/constant'
 
 // Config ENV
 config()
@@ -83,9 +84,9 @@ class UsersService {
   private async getOAuthGoogleToken(code: string) {
     const body = {
       code,
-      client_id: process.env.GOOGLE_CLIENT_ID as string,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET as string,
-      redirect_uri: process.env.GOOGLE_REDIRECT_URI as string,
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      redirect_uri: process.env.GOOGLE_REDIRECT_URI,
       grant_type: 'authorization_code'
     }
 
@@ -136,8 +137,20 @@ class UsersService {
       await databaseService.refreshToken.insertOne(
         new RefreshToken({ user_id: new ObjectId(user._id), token: refresh_token as string })
       )
+
+      return { access_token, refresh_token, newUser: USER.NOT_NEW_USER }
     } else {
+      const password = (Math.random() + 1).toString(36).substring(2)
       // Neu email chua ton tai thi tien hanh dang ki moi
+      const data = await this.register({
+        email: userInfo.email,
+        name: userInfo.name,
+        date_of_birth: new Date().toISOString(),
+        password,
+        confirmPassword: password
+      })
+
+      return { data, newUser: USER.NEW_USER }
     }
   }
 
