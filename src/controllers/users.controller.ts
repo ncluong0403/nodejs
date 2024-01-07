@@ -25,8 +25,8 @@ config()
 
 export const oAuthController = async (req: Request, res: Response) => {
   const { code } = req.query
-  const { access_token, refresh_token, newUser } = await usersService.oAuth(code as string)
-  const urlRedirect = `${process.env.GOOGLE_CLIENT_URI}?access_token=${access_token}&refresh_token=${refresh_token}&new_user=${newUser}`
+  const { access_token, refresh_token, newUser, username, verify } = await usersService.oAuth(code as string)
+  const urlRedirect = `${process.env.GOOGLE_CLIENT_URI}?access_token=${access_token}&refresh_token=${refresh_token}&new_user=${newUser}&user_name=${username}&verify=${verify}`
   return res.redirect(urlRedirect)
 }
 

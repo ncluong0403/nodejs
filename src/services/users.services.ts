@@ -98,6 +98,9 @@ class UsersService {
     return data as {
       access_token: string
       id_token: string
+      scope: string
+      expires_in: number
+      refresh_token: string
     }
   }
 
@@ -138,7 +141,7 @@ class UsersService {
         new RefreshToken({ user_id: new ObjectId(user._id), token: refresh_token as string })
       )
 
-      return { access_token, refresh_token, newUser: USER.NOT_NEW_USER }
+      return { access_token, refresh_token, newUser: USER.NOT_NEW_USER, username: user.name, verify: user.verify }
     } else {
       const password = (Math.random() + 1).toString(36).substring(2)
       // Neu email chua ton tai thi tien hanh dang ki moi
@@ -150,7 +153,7 @@ class UsersService {
         confirmPassword: password
       })
 
-      return { data, newUser: USER.NEW_USER }
+      return { ...data, newUser: USER.NEW_USER, username: userInfo.name, verify: UserVerifyStatus.Unverified }
     }
   }
 
@@ -221,6 +224,7 @@ class UsersService {
   }
 
   async verifyEmail(user_id: string) {
+    console.log('🚀 ~ user_id:', user_id)
     // Thời điểm hàm chạy vào được tạo giá trị cập nhập: new Date()
     // Thời điểm MongoDB cập nhập giá trị (sau thời gian tạo giá trị cập nhập bằng new Date) thì sẽ dùng: $currentDate or "$$NOW"
 
