@@ -63,5 +63,6 @@ export const USERS_MESSAGES = {
   GMAIL_NOT_VERIFIED: 'Gmail not verified',
   UPLOAD_SUCCESS: 'Upload success',
   REFRESH_TOKEN_SUCCESS: 'Refresh token success',
-  GET_VIDEO_STATUS_SUCCESS: 'Get video status success'
+  GET_VIDEO_STATUS_SUCCESS: 'Get video status success',
+  IMAGE_NOT_FOUND: 'Image not found'
 } as const

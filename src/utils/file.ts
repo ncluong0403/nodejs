@@ -15,28 +15,23 @@ export const initFolderUpload = () => {
   }
 }
 
-export const handleUploadSingleImage = (req: Request) => {
+export const uploadImage = (req: Request) => {
   const form = formidable({
     uploadDir: UPLOAD_TEMP_DIR,
     keepExtensions: true,
-    maxFiles: 1,
-    maxFileSize: 10 * 1024 * 1024, // 10MB
+    maxFiles: 4,
+    maxFileSize: 20 * 1024 * 1024,
     filter: ({ name, originalFilename, mimetype }) => {
-      console.log({ name, originalFilename, mimetype })
-      const valid = Boolean(mimetype?.includes('image'))
+      const valid = Boolean(name === 'image' && mimetype?.includes('image'))
       if (!valid) {
-        form.emit('error' as any, new Error('File type invalid') as any)
-      }
-
-      if (!(name === 'image')) {
-        form.emit('error' as any, new Error('Key must be image') as any)
+        form.emit('error' as any, new Error('File type invalid or Key must be image') as any)
       }
 
       return valid
     }
   })
 
-  return new Promise<File>((resolve, reject) => {
+  return new Promise<File[]>((resolve, reject) => {
     form.parse(req, (err, fields, files) => {
       if (err) {
         return reject(err)
@@ -45,7 +40,7 @@ export const handleUploadSingleImage = (req: Request) => {
       if (!files.image) {
         reject(new Error('File is not empty'))
       }
-      return resolve((files.image as File[])[0])
+      return resolve(files.image as File[])
     })
   })
 }
