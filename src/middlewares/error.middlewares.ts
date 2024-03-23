@@ -9,6 +9,8 @@ export const defaultErrorHandler = () => {
       return res.status(err.status).json(omit(err, ['status']))
     }
     // switch err empty to object have properties with message and stack
+    // Handle with case obj Error (new Error(message)) -> a special obj
+    // https://javascript.info/property-descriptors#object-defineproperties
     Object.getOwnPropertyNames(err).forEach((key) => {
       Object.defineProperty(err, key, { enumerable: true })
     })

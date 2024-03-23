@@ -10,7 +10,7 @@ import { REGEX_USERNAME } from '~/constants/regex'
 import { ErrorWithStatus } from '~/models/Error'
 import databaseService from '~/services/database.services'
 import usersService from '~/services/users.services'
-import { TokenPayload } from '~/types/User.requests'
+import { TokenPayload } from '~/models/requests/User.requests'
 import { hashPassword } from '~/utils/crypto'
 import { verifyToken } from '~/utils/jwt'
 import { validate } from '~/utils/validation'
@@ -69,6 +69,7 @@ const confirmPasswordSchema: ParamSchema = {
     },
     errorMessage: USERS_MESSAGES.CONFIRM_PASSWORD_MUST_BE_STRONG
   },
+  // Check password & confirm password sam value
   custom: {
     options: (confirmPassword, { req }) => {
       return usersService.confirmPassword(confirmPassword, req)

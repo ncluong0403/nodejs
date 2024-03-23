@@ -32,7 +32,7 @@ import {
   verifyEmailTokenValidator,
   verifyForgotPasswordValidator
 } from '~/middlewares/users.middlewares'
-import { UpdateProfileRequestBody } from '~/types/User.requests'
+import { UpdateProfileRequestBody } from '~/models/requests/User.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
 const usersRouter = Router()
 

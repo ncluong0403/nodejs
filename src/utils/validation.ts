@@ -1,11 +1,10 @@
-import express, { Request, Response, NextFunction } from 'express'
-import { body, validationResult, ValidationChain } from 'express-validator'
+import { Request, Response, NextFunction } from 'express'
+import { validationResult, ValidationChain } from 'express-validator'
 import { RunnableValidationChains } from 'express-validator/src/middlewares/schema'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { ErrorEntity, ErrorWithStatus } from '~/models/Error'
 // can be reused by many routes
 
-// sequential processing, stops running validations chain if the previous one fails.
 export const validate = (validation: RunnableValidationChains<ValidationChain>) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     await validation.run(req)
@@ -13,19 +12,22 @@ export const validate = (validation: RunnableValidationChains<ValidationChain>) 
     const errorObj = errors.mapped()
     const entityError = new ErrorEntity({ errors: {} })
 
-    // Nếu biến errors này empty (no err) thì nó sẽ next
+    // if variable errors is empty, then return next request handler function
     if (errors.isEmpty()) {
       return next()
     }
+
     for (const key in errorObj) {
       const { msg } = errorObj[key]
-      // Different err 422(validate)
+      // Error not status 422
       if (msg instanceof ErrorWithStatus && msg.status !== HTTP_STATUS.UNPROCESSABLE_ENTITY) {
         return next(msg)
       }
+
+      // Error with status 422
       entityError.errors[key] = errorObj[key]
     }
-
+    // if variable have errors with status 422, then return next error handler function
     next(entityError)
   }
 }

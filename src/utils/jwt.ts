@@ -1,6 +1,6 @@
 import { config } from 'dotenv'
 import jwt, { SignOptions } from 'jsonwebtoken'
-import { TokenPayload } from '~/types/User.requests'
+import { TokenPayload } from '~/models/requests/User.requests'
 // Config ENV
 config()
 
@@ -12,7 +12,7 @@ interface signTokenType {
 
 export function signToken({ payload, privateKey, options = { algorithm: 'HS256' } }: signTokenType) {
   return new Promise<string>((resolve, reject) =>
-    jwt.sign(payload, privateKey, options, function (err, token) {
+    jwt.sign(payload, privateKey, options, (err, token) => {
       if (err) {
         throw reject(err)
       }

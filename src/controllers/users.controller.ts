@@ -13,7 +13,7 @@ import {
   TokenPayload,
   UnFollowReqParam,
   UpdateProfileRequestBody
-} from '~/types/User.requests'
+} from '~/models/requests/User.requests'
 import databaseService from '~/services/database.services'
 import User from '~/models/schemas/User.schema'
 import { ObjectId } from 'mongodb'

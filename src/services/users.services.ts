@@ -1,7 +1,7 @@
 import User from '~/models/schemas/User.schema'
 import databaseService from './database.services'
 import { Request } from 'express'
-import { RegisterRequestBody, UpdateProfileRequestBody } from '~/types/User.requests'
+import { RegisterRequestBody, UpdateProfileRequestBody } from '~/models/requests/User.requests'
 import { hashPassword } from '~/utils/crypto'
 import { signToken } from '~/utils/jwt'
 import { TokenType, UserVerifyStatus } from '~/constants/enums'
@@ -224,7 +224,6 @@ class UsersService {
   }
 
   async verifyEmail(user_id: string) {
-    console.log('🚀 ~ user_id:', user_id)
     // Thời điểm hàm chạy vào được tạo giá trị cập nhập: new Date()
     // Thời điểm MongoDB cập nhập giá trị (sau thời gian tạo giá trị cập nhập bằng new Date) thì sẽ dùng: $currentDate or "$$NOW"
 
