@@ -336,7 +336,7 @@ export const accessTokenValidator = validate(
             }
             if (!accessToken) {
               throw new ErrorWithStatus({
-                message: USERS_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
+                message: USERS_MESSAGES.MISSING_BEARER_BEFORE_ACCESS_TOKEN,
                 status: HTTP_STATUS.UNAUTHORIZED
               })
             }
@@ -347,8 +347,9 @@ export const accessTokenValidator = validate(
               })
               ;(req as Request).decode_authorization = decode_authorization
             } catch (error) {
+              /// handle error form jwt token
               throw new ErrorWithStatus({
-                message: capitalize((error as JsonWebTokenError).message),
+                message: capitalize(`Access token ${(error as JsonWebTokenError).message}`),
                 status: HTTP_STATUS.UNAUTHORIZED
               })
             }
@@ -382,7 +383,7 @@ export const refreshTokenValidator = validate(
               ])
               if (!refreshToken) {
                 throw new ErrorWithStatus({
-                  message: USERS_MESSAGES.USED_REFRESH_TOKEN_OR_NOT_EXIST,
+                  message: USERS_MESSAGES.REFRESH_TOKEN_NOT_EXIST_OR_USER_LOGGED_OUT,
                   status: HTTP_STATUS.UNAUTHORIZED
                 })
               }
@@ -390,7 +391,7 @@ export const refreshTokenValidator = validate(
             } catch (error) {
               if (error instanceof JsonWebTokenError) {
                 throw new ErrorWithStatus({
-                  message: capitalize(error.message),
+                  message: capitalize(`Refresh token ${error.message}`),
                   status: HTTP_STATUS.UNAUTHORIZED
                 })
               }

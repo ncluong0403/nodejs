@@ -24,6 +24,7 @@ export function signToken({ payload, privateKey, options = { algorithm: 'HS256' 
 export function verifyToken({ token, privateKey }: { token: string; privateKey: string }) {
   return new Promise<TokenPayload>((resolve, reject) => {
     jwt.verify(token, privateKey, (err, decode) => {
+      // decode return value jwt payload
       if (err) {
         throw reject(err)
       }

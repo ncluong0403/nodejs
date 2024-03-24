@@ -16,8 +16,8 @@ const port = 4000
 initFolderUpload()
 
 // Middleware
-app.use(express.json())
-// app.use('/static', express.static(UPLOAD_IMAGE_DIR))
+app.use(express.json()) // Parse a data when a client sends to the server (such as POST method) from JSON to Object
+// app.use('/static', express.static(UPLOAD_DIR))
 app.use('/users', usersRouter)
 app.use('/medias', mediaRouter)
 app.use('/static', staticRouter)

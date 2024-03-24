@@ -8,6 +8,7 @@ import {
   loginController,
   logoutController,
   oAuthController,
+  refreshTokenController,
   registerController,
   resendVerifyEmailController,
   resetPasswordController,
@@ -51,6 +52,14 @@ usersRouter.get('/oauth/google', oAuthController)
  * Body: {  email: string, password: string}
  */
 usersRouter.post('/login', loginValidator, loginController)
+
+/**
+ * Description: Refresh token when access token expired
+ * Path: /refresh_token
+ * Method: POST
+ * Body: {refresh_token: string}
+ */
+usersRouter.post('/refresh_token', refreshTokenValidator, wrapRequestHandler(refreshTokenController))
 
 /**
  * Description: Logout a user

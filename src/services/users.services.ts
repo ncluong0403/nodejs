@@ -32,7 +32,19 @@ class UsersService {
     })
   }
 
-  private signRefreshToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+  private signRefreshToken({ user_id, verify, exp }: { user_id: string; verify: UserVerifyStatus; exp?: number }) {
+    if (exp) {
+      return signToken({
+        payload: {
+          user_id,
+          type: TokenType.RefreshToken,
+          verify,
+          exp
+        },
+        privateKey: process.env.JWT_REFRESH_TOKEN as string
+      })
+    }
+
     return signToken({
       payload: {
         user_id,
@@ -169,6 +181,35 @@ class UsersService {
         expiresIn: process.env.FORGOT_PASSWORD_TOKEN_EXPIRES_IN
       }
     })
+  }
+
+  async refreshToken({
+    refresh_token,
+    verify,
+    user_id
+  }: {
+    refresh_token: string
+    verify: UserVerifyStatus
+    user_id: string
+  }) {
+    const [newAccessToken, newRefreshToken] = await Promise.all([
+      this.signAccessToken({ user_id, verify }),
+      this.signRefreshToken({ user_id, verify }),
+      databaseService.refreshToken.deleteOne({ token: refresh_token })
+    ])
+
+    console.log('🚀 ~ newRefreshToken:', newRefreshToken)
+    await databaseService.refreshToken.insertOne(
+      new RefreshToken({
+        user_id: new ObjectId(user_id),
+        token: newRefreshToken
+      })
+    )
+
+    return {
+      access_token: newAccessToken,
+      refresh_token: newRefreshToken
+    }
   }
 
   async register(payload: RegisterRequestBody) {
@@ -438,5 +479,6 @@ class UsersService {
   }
 }
 
+// Create a new object from instance UsersService
 const usersService = new UsersService()
 export default usersService

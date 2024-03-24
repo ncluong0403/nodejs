@@ -8,6 +8,7 @@ import {
   GetProfileUserReqParam,
   LoginRequestBody,
   LogoutRequestBody,
+  RefreshTokenRequestBody,
   RegisterRequestBody,
   ResetPasswordRequestBody,
   TokenPayload,
@@ -44,6 +45,20 @@ export const registerController = async (req: Request<ParamsDictionary, any, Reg
   const result = await usersService.register(req.body)
   return res.json({
     message: USERS_MESSAGES.REGISTER_SUCCESS,
+    result
+  })
+}
+
+export const refreshTokenController = async (
+  req: Request<ParamsDictionary, any, RefreshTokenRequestBody>,
+  res: Response
+) => {
+  console.log('decode', req.decode_refresh_token)
+  const { user_id, verify } = req.decode_refresh_token as TokenPayload
+  const { refresh_token } = req.body
+  const result = await usersService.refreshToken({ refresh_token, user_id, verify })
+  return res.json({
+    message: USERS_MESSAGES.REFRESH_TOKEN_SUCCESS,
     result
   })
 }

@@ -30,6 +30,10 @@ export interface LogoutRequestBody {
   refresh_token: string
 }
 
+export interface RefreshTokenRequestBody {
+  refresh_token: string
+}
+
 export interface FollowUserReqBody {
   followed_user_id: string
 }
