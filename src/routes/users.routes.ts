@@ -51,7 +51,7 @@ usersRouter.get('/oauth/google', oAuthController)
  * Method: POST
  * Body: {  email: string, password: string}
  */
-usersRouter.post('/login', loginValidator, loginController)
+usersRouter.post('/login', loginValidator, wrapRequestHandler(loginController))
 
 /**
  * Description: Refresh token when access token expired

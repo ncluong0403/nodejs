@@ -5,22 +5,22 @@ interface RefreshTokenType {
   token: string
   created_at?: Date
   user_id: ObjectId
-  // iat: number
-  // exp: number
+  iat: number
+  exp: number
 }
 export default class RefreshToken {
   _id?: ObjectId
   token: string
   created_at: Date
   user_id: ObjectId
-  // iat: Date
-  // exp: Date
-  constructor({ _id, token, created_at, user_id }: RefreshTokenType) {
+  iat: Date
+  exp: Date
+  constructor({ _id, token, created_at, user_id, iat, exp }: RefreshTokenType) {
     this._id = _id
     this.token = token
-    this.created_at = created_at || new Date()
+    this.created_at = created_at || new Date() // The moment the refresh token save into the database
     this.user_id = user_id
-    // this.iat = new Date(iat * 1000) // Convert Epoch time to Date
-    // this.exp = new Date(exp * 1000) // Convert Epoch time to Date
+    this.iat = new Date(iat * 1000) // The moment the refresh token was initialized
+    this.exp = new Date(exp * 1000) // Convert Epoch time to Date -> from second to millisecond
   }
 }

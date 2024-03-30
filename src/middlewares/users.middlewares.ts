@@ -381,12 +381,14 @@ export const refreshTokenValidator = validate(
                 verifyToken({ token: value, privateKey: process.env.JWT_REFRESH_TOKEN as string }),
                 databaseService.refreshToken.findOne({ token: value })
               ])
+
               if (!refreshToken) {
                 throw new ErrorWithStatus({
                   message: USERS_MESSAGES.REFRESH_TOKEN_NOT_EXIST_OR_USER_LOGGED_OUT,
                   status: HTTP_STATUS.UNAUTHORIZED
                 })
               }
+
               ;(req as Request).decode_refresh_token = decode_refresh_token
             } catch (error) {
               if (error instanceof JsonWebTokenError) {
@@ -395,6 +397,7 @@ export const refreshTokenValidator = validate(
                   status: HTTP_STATUS.UNAUTHORIZED
                 })
               }
+
               throw error
             }
             return true
