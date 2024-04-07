@@ -171,6 +171,13 @@ const imageSchema: ParamSchema = {
 const userIdSchema: ParamSchema = {
   custom: {
     options: async (value: string, { req }) => {
+      if (!value) {
+        throw new ErrorWithStatus({
+          message: USERS_MESSAGES.USER_ID_IS_REQUIRED,
+          status: HTTP_STATUS.NOT_FOUND
+        })
+      }
+
       if (!ObjectId.isValid(value)) {
         throw new ErrorWithStatus({
           message: USERS_MESSAGES.INVALID_USER_ID,
@@ -178,12 +185,12 @@ const userIdSchema: ParamSchema = {
         })
       }
 
-      const followed_id = await databaseService.users.findOne({
+      const user_id_followed = await databaseService.users.findOne({
         _id: new ObjectId(value)
       })
 
       // Kiểm tra user sẽ được follow có tồn tại hay không?
-      if (followed_id === null) {
+      if (user_id_followed === null) {
         throw new ErrorWithStatus({
           message: USERS_MESSAGES.USER_NOT_FOUND,
           status: HTTP_STATUS.NOT_FOUND
@@ -447,7 +454,7 @@ export const verifyEmailTokenValidator = validate(
   )
 )
 
-export const forgotPasswordValidator = validate(
+export const emailValidator = validate(
   checkSchema(
     {
       email: {
@@ -462,7 +469,7 @@ export const forgotPasswordValidator = validate(
           options: async (email, { req }) => {
             const user = await databaseService.users.findOne({ email })
             if (!user) {
-              throw new Error(USERS_MESSAGES.USER_NOT_FOUND)
+              throw new Error(USERS_MESSAGES.EMAIL_DOES_NOT_EXIST)
             }
             req.user = user
             return true
@@ -493,19 +500,6 @@ export const resetPasswordValidator = validate(
     ['body']
   )
 )
-
-export const verifiedUserValidator = async (req: Request, res: Response, next: NextFunction) => {
-  const { verify } = req.decode_authorization as TokenPayload
-  if (verify !== UserVerifyStatus.Verified) {
-    next(
-      new ErrorWithStatus({
-        message: USERS_MESSAGES.USER_NOT_VERIFIED,
-        status: HTTP_STATUS.FORBIDDEN
-      })
-    )
-  }
-  next()
-}
 
 export const updateMyProfileValidator = validate(
   checkSchema(
@@ -578,12 +572,13 @@ export const updateMyProfileValidator = validate(
             const user = await databaseService.users.findOne({
               username: value
             })
-            if (!REGEX_USERNAME.test(value)) {
-              throw Error(USERS_MESSAGES.USERNAME_INVALID)
-            }
 
             if (user) {
               throw Error(USERS_MESSAGES.USERNAME_EXISTED)
+            }
+
+            if (!REGEX_USERNAME.test(value)) {
+              throw Error(USERS_MESSAGES.USERNAME_INVALID)
             }
           }
         }
@@ -595,16 +590,13 @@ export const updateMyProfileValidator = validate(
   )
 )
 
-export const followValidator = validate(
-  checkSchema({
-    followed_user_id: userIdSchema
-  })
-)
-
-export const unFollowValidator = validate(
-  checkSchema({
-    user_id: userIdSchema
-  })
+export const userIdValidator = validate(
+  checkSchema(
+    {
+      user_id_followed: userIdSchema
+    },
+    ['body', 'params']
+  )
 )
 
 export const changePassWordValidator = validate(

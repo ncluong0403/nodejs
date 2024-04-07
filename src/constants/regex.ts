@@ -1,1 +1,2 @@
-export const REGEX_USERNAME = /^[a-zA-Z-]{1,15}$/
+// will edit again when learn regex
+export const REGEX_USERNAME = /^(?![0-9]+$)[A-Za-z0-9_]{4,15}$/

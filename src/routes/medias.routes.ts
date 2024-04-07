@@ -1,7 +1,7 @@
 import { uploadImageController, uploadVideoController } from '~/controllers/medias.controller'
 import { wrapRequestHandler } from './../utils/handlers'
 import { Router } from 'express'
-import { accessTokenValidator, verifiedUserValidator } from '~/middlewares/users.middlewares'
+import { accessTokenValidator } from '~/middlewares/users.middlewares'
 
 const mediaRouter = Router()
 
@@ -11,12 +11,7 @@ const mediaRouter = Router()
  * Method: POST
  * form-data: { image: file }
  */
-mediaRouter.post(
-  '/upload-images',
-  accessTokenValidator,
-  verifiedUserValidator,
-  wrapRequestHandler(uploadImageController)
-)
+mediaRouter.post('/upload-images', accessTokenValidator, wrapRequestHandler(uploadImageController))
 
 /**
  * Description: Upload video
@@ -24,11 +19,6 @@ mediaRouter.post(
  * Method: POST
  * form-data: { video: file }
  */
-mediaRouter.post(
-  '/upload-videos',
-  accessTokenValidator,
-  verifiedUserValidator,
-  wrapRequestHandler(uploadVideoController)
-)
+mediaRouter.post('/upload-videos', accessTokenValidator, wrapRequestHandler(uploadVideoController))
 
 export default mediaRouter

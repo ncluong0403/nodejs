@@ -3,7 +3,7 @@ import {
   changePasswordController,
   followUserController,
   forgotPasswordController,
-  getMyProfileController,
+  getProfileController,
   getProfileUserController,
   loginController,
   logoutController,
@@ -13,7 +13,7 @@ import {
   resendVerifyEmailController,
   resetPasswordController,
   unFollowUserController,
-  updateMyProfileController,
+  updateProfileController,
   verifyEmailController,
   verifyForgotPasswordController
 } from '~/controllers/users.controller'
@@ -21,15 +21,13 @@ import { filterMiddleware } from '~/middlewares/common.middlewares'
 import {
   accessTokenValidator,
   changePassWordValidator,
-  followValidator,
-  forgotPasswordValidator,
+  emailValidator,
   loginValidator,
   refreshTokenValidator,
   registerValidator,
   resetPasswordValidator,
-  unFollowValidator,
   updateMyProfileValidator,
-  verifiedUserValidator,
+  userIdValidator,
   verifyEmailTokenValidator,
   verifyForgotPasswordValidator
 } from '~/middlewares/users.middlewares'
@@ -90,10 +88,9 @@ usersRouter.post('/verify-email', verifyEmailTokenValidator, wrapRequestHandler(
  * Description: Resend verify email
  * Path: /resend-verify-email
  * Method: POST
- * Headers: { Authorization: Bearer <accessToken> }
- * Body: {  }
+ * Body: { email: string }
  */
-usersRouter.post('/resend-verify-email', accessTokenValidator, wrapRequestHandler(resendVerifyEmailController))
+usersRouter.post('/resend-verify-email', emailValidator, wrapRequestHandler(resendVerifyEmailController))
 
 /**
  * Description: Submit email to reset password, send email to user
@@ -101,7 +98,7 @@ usersRouter.post('/resend-verify-email', accessTokenValidator, wrapRequestHandle
  * Method: POST
  * Body: { email: string }
  */
-usersRouter.post('/forgot-password', forgotPasswordValidator, wrapRequestHandler(forgotPasswordController))
+usersRouter.post('/forgot-password', emailValidator, wrapRequestHandler(forgotPasswordController))
 
 /**
  * Description: Verify link in email to reset password
@@ -119,7 +116,7 @@ usersRouter.post(
  * Description: Reset password
  * Path: /reset-password
  * Method: POST
- * Body: { forgot-password-token: string, password: string }
+ * Body: { forgot-password-token: string, password: string, confirm_password: string }
  */
 usersRouter.post('/reset-password', resetPasswordValidator, wrapRequestHandler(resetPasswordController))
 
@@ -129,7 +126,7 @@ usersRouter.post('/reset-password', resetPasswordValidator, wrapRequestHandler(r
  * Method: GET
  * Headers: { Authorization: Bearer <accessToken> }
  */
-usersRouter.get('/me', accessTokenValidator, wrapRequestHandler(getMyProfileController))
+usersRouter.get('/profile', accessTokenValidator, wrapRequestHandler(getProfileController))
 
 /**
  * Description: Update my profile
@@ -139,10 +136,10 @@ usersRouter.get('/me', accessTokenValidator, wrapRequestHandler(getMyProfileCont
  * Body: UserSchema
  */
 usersRouter.patch(
-  '/me',
+  '/update-profile',
   accessTokenValidator,
-  verifiedUserValidator,
   updateMyProfileValidator,
+  // filterMiddleware dùng để tránh việc client gửi thừa thuộc tính trong body
   filterMiddleware<UpdateProfileRequestBody>([
     'name',
     'bio',
@@ -153,7 +150,7 @@ usersRouter.patch(
     'website',
     'date_of_birth'
   ]),
-  wrapRequestHandler(updateMyProfileController)
+  wrapRequestHandler(updateProfileController)
 )
 
 /**
@@ -168,42 +165,33 @@ usersRouter.get('/:username', wrapRequestHandler(getProfileUserController))
  * Path: /follow
  * Method: POST
  * Headers: { Authorization: Bearer <accessToken> }
- * Body: { followed_user_id: string}
+ * Body: { user_id_followed: string}
  */
-usersRouter.post(
-  '/follow',
-  accessTokenValidator,
-  verifiedUserValidator,
-  followValidator,
-  wrapRequestHandler(followUserController)
-)
+usersRouter.post('/follow', accessTokenValidator, userIdValidator, wrapRequestHandler(followUserController))
 
 /**
  * Description: UnFollow someone
- * Path: /follow/:user_id
+ * Path: /unfollow/:user_id_followed
  * Method: DELETE
  * Headers: { Authorization: Bearer <accessToken> }
- * Body: { user_id: string}
  */
 usersRouter.delete(
-  '/follow/:user_id',
+  '/unfollow/:user_id_followed',
   accessTokenValidator,
-  verifiedUserValidator,
-  unFollowValidator,
+  userIdValidator,
   wrapRequestHandler(unFollowUserController)
 )
 
 /**
  * Description: Change password
  * Path: /change-password
- * Method: PUT
+ * Method: PATCH
  * Headers: { Authorization: Bearer <accessToken> }
  * Body: { old_password: string, pass_word: string, confirm_password: string}
  */
-usersRouter.put(
+usersRouter.patch(
   '/change-password',
   accessTokenValidator,
-  verifiedUserValidator,
   changePassWordValidator,
   wrapRequestHandler(changePasswordController)
 )

@@ -6,6 +6,7 @@ export const USERS_MESSAGES = {
   EMAIL_ALREADY_EXISTS: 'Email already exists',
   EMAIL_IS_REQUIRED: 'Email is required',
   EMAIL_IS_INVALID: 'Email is invalid',
+  EMAIL_DOES_NOT_EXIST: 'Email does not exist',
   EMAIL_OR_PASSWORD_IS_INCORRECT: 'Email or password is incorrect',
   PASSWORD_IS_REQUIRED: 'Password is required',
   PASSWORD_MUST_BE_A_STRING: 'Password must be a string',
@@ -37,7 +38,7 @@ export const USERS_MESSAGES = {
   VERIFY_FORGOT_PASSWORD_SUCCESS: 'Verify forgot password success',
   INVALID_FORGOT_PASSWORD_TOKEN: 'Invalid forgot password token',
   RESET_PASSWORD_SUCCESS: 'Reset password success',
-  GET_ME_SUCCESS: 'Get my profile success',
+  GET_PROFILE_SUCCESS: 'Get profile success',
   USER_NOT_VERIFIED: 'User not verified',
   BIO_MUST_BE_STRING: 'Bio must be a string',
   BIO_LENGTH: 'Bio length must be from 1 to 200',
@@ -66,5 +67,7 @@ export const USERS_MESSAGES = {
   REFRESH_TOKEN_SUCCESS: 'Refresh token success',
   GET_VIDEO_STATUS_SUCCESS: 'Get video status success',
   IMAGE_NOT_FOUND: 'Image not found',
-  VIDEO_NOT_FOUND: 'Video not found'
+  VIDEO_NOT_FOUND: 'Video not found',
+  ACCOUNT_NOT_VERIFIED: 'Account not verified',
+  USER_ID_IS_REQUIRED: 'User id  is required'
 } as const

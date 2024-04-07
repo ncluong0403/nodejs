@@ -35,13 +35,13 @@ export interface RefreshTokenRequestBody {
 }
 
 export interface FollowUserReqBody {
-  followed_user_id: string
+  user_id_followed: string
 }
 
 export interface ChangePasswordReqBody {
   old_password: string
   password: string
-  new_password: string
+  confirm_password: string
 }
 
 export interface EmailVerifyRequestBody {
@@ -50,6 +50,8 @@ export interface EmailVerifyRequestBody {
 
 export interface ResetPasswordRequestBody {
   password: string
+  confirm_password: string
+  forgot_password_token: string
 }
 
 export interface GetProfileUserReqParam {
@@ -57,13 +59,13 @@ export interface GetProfileUserReqParam {
 }
 
 export interface UnFollowReqParam extends ParamsDictionary {
-  user_id: string
+  followed_user_id: string
 }
 
 export interface TokenPayload extends JwtPayload {
   user_id: string
   token_type: TokenType
-  verify: UserVerifyStatus,
+  verify: UserVerifyStatus
   exp: number
   iat: number
 }

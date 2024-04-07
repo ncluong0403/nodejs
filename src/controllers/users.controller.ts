@@ -21,6 +21,7 @@ import { ObjectId } from 'mongodb'
 import { USERS_MESSAGES } from '~/constants/errorMessages'
 import { UserVerifyStatus } from '~/constants/enums'
 import { config } from 'dotenv'
+import HTTP_STATUS from '~/constants/httpStatus'
 
 config()
 
@@ -76,7 +77,7 @@ export const verifyEmailController = async (
   const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
   // Check user existed?
   if (!user) {
-    return res.json({
+    return res.status(HTTP_STATUS.NOT_FOUND).json({
       message: USERS_MESSAGES.USER_NOT_FOUND
     })
   }
@@ -88,21 +89,12 @@ export const verifyEmailController = async (
   }
 
   const result = await usersService.verifyEmail(user_id)
-  return res.json({
-    message: USERS_MESSAGES.EMAIL_VERIFY_SUCCESS,
-    result
-  })
+  return res.json(result)
 }
 
 export const resendVerifyEmailController = async (req: Request, res: Response) => {
-  const { user_id } = req.decode_authorization as TokenPayload
-  const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
-  // Check user existed?
-  if (!user) {
-    return res.json({
-      message: USERS_MESSAGES.USER_NOT_FOUND
-    })
-  }
+  const user = req.user as User
+  const user_id = user._id as ObjectId
   // Check email verified?
   if (user.verify === UserVerifyStatus.Verified) {
     return res.json({
@@ -110,7 +102,7 @@ export const resendVerifyEmailController = async (req: Request, res: Response) =
     })
   }
 
-  const result = await usersService.resendVerifyEmail(user_id)
+  const result = await usersService.resendVerifyEmail(user_id.toString())
   return res.json(result)
 }
 
@@ -137,10 +129,10 @@ export const resetPasswordController = async (
   return res.json(result)
 }
 
-export const getMyProfileController = async (req: Request, res: Response) => {
+export const getProfileController = async (req: Request, res: Response) => {
   const { user_id } = req.decode_authorization as TokenPayload
 
-  const result = await usersService.getMyProfile(user_id)
+  const result = await usersService.getProfile(user_id)
   return res.json(result)
 }
 
@@ -151,7 +143,7 @@ export const getProfileUserController = async (req: Request<GetProfileUserReqPar
   return res.json(result)
 }
 
-export const updateMyProfileController = async (
+export const updateProfileController = async (
   req: Request<ParamsDictionary, any, UpdateProfileRequestBody>,
   res: Response
 ) => {
@@ -167,16 +159,16 @@ export const updateMyProfileController = async (
 
 export const followUserController = async (req: Request<ParamsDictionary, any, FollowUserReqBody>, res: Response) => {
   const { user_id } = req.decode_authorization as TokenPayload
-  const { followed_user_id } = req.body
-  const result = await usersService.follow(user_id, followed_user_id)
+  const { user_id_followed } = req.body
+  const result = await usersService.follow(user_id, user_id_followed)
 
   return res.json(result)
 }
 
 export const unFollowUserController = async (req: Request<UnFollowReqParam>, res: Response) => {
   const { user_id } = req.decode_authorization as TokenPayload
-  const { user_id: followed_user_id } = req.params
-  const result = await usersService.unFollow(user_id, followed_user_id)
+  const { user_id_followed } = req.params
+  const result = await usersService.unFollow(user_id, user_id_followed)
 
   return res.json(result)
 }

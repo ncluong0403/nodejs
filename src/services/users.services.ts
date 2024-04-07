@@ -12,6 +12,7 @@ import { config } from 'dotenv'
 import HTTP_STATUS from '~/constants/httpStatus'
 import axios from 'axios'
 import { USER } from '~/constants/constant'
+import Followers from '~/models/schemas/Followers.schema'
 
 // Config ENV
 config()
@@ -161,6 +162,11 @@ class UsersService {
   }
 
   async login({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+    // Make sure the user is authenticated
+    if (verify === UserVerifyStatus.Unverified) {
+      throw new ErrorWithStatus({ status: HTTP_STATUS.UNAUTHORIZED, message: USERS_MESSAGES.ACCOUNT_NOT_VERIFIED })
+    }
+
     const [accessToken, refreshToken] = await this.signAccessTokenAndRefreshToken({ user_id, verify })
 
     const { iat, exp } = await this.decodeRefreshToken(refreshToken)
@@ -245,13 +251,6 @@ class UsersService {
       verify: UserVerifyStatus.Unverified
     })
 
-    // const [access_token, refresh_token] = await this.signAccessTokenAndRefreshToken({
-    //   user_id: user_id.toString(),
-    //   verify: UserVerifyStatus.Unverified
-    // })
-
-    // const { iat, exp } = await this.decodeRefreshToken(refresh_token)
-
     // Make sure refresh token & email verify token succeed before inserting user và refresh token into db
     await databaseService.users.insertOne(
       new User({
@@ -264,12 +263,7 @@ class UsersService {
       })
     )
 
-    // await databaseService.refreshToken.insertOne(
-    //   new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token, iat, exp })
-    // )
     return {
-      // access_token,
-      // refresh_token,
       email_verify_token
     }
   }
@@ -297,46 +291,30 @@ class UsersService {
   }
 
   async verifyEmail(user_id: string) {
-    // Thời điểm hàm chạy vào được tạo giá trị cập nhập: new Date()
-    // Thời điểm MongoDB cập nhập giá trị (sau thời gian tạo giá trị cập nhập bằng new Date) thì sẽ dùng: $currentDate or "$$NOW"
+    //  new Date() sử dụng để tạo ra giá trị (hiện tại)
+    //  $currentDate or "$$NOW" sử dụng khi Mongo cập nhập giá trị (thời điểm mông cập nhập giá trị vào collection)
 
-    const [token] = await Promise.all([
-      this.signAccessTokenAndRefreshToken({ user_id, verify: UserVerifyStatus.Verified }),
-      await databaseService.users.updateOne(
-        { _id: new ObjectId(user_id) },
-        {
-          $set: {
-            email_verify_token: '',
-            verify: UserVerifyStatus.Verified
-          },
-          $currentDate: {
-            updated_at: true
-          }
+    await databaseService.users.updateOne(
+      { _id: new ObjectId(user_id) },
+      {
+        $set: {
+          email_verify_token: '',
+          verify: UserVerifyStatus.Verified
+        },
+        $currentDate: {
+          updated_at: true
         }
-      )
-    ])
-
-    const [accessToken, refreshToken] = token
-    const { iat, exp } = await this.decodeRefreshToken(refreshToken)
-
-    await databaseService.refreshToken.insertOne(
-      new RefreshToken({
-        user_id: new ObjectId(user_id),
-        token: refreshToken,
-        iat,
-        exp
-      })
+      }
     )
 
     return {
-      accessToken,
-      refreshToken
+      message: USERS_MESSAGES.EMAIL_VERIFY_SUCCESS
     }
   }
 
   async resendVerifyEmail(user_id: string) {
-    // Thời điểm hàm chạy vào được tạo giá trị cập nhập: new Date()
-    // Thời điểm MongoDB cập nhập giá trị (sau thời gian tạo giá trị cập nhập bằng new Date) thì sẽ dùng: $currentDate or "$$NOW"
+    //  new Date() sử dụng để tạo ra giá trị (hiện tại)
+    //  $currentDate or "$$NOW" sử dụng khi Mongo cập nhập giá trị
 
     const email_verify_token = await this.signEmailVerifyToken({ user_id, verify: UserVerifyStatus.Unverified })
 
@@ -370,7 +348,8 @@ class UsersService {
     // Gửi email kèm link đến email user : https://twitter.com/forgot_password?token=token
     console.log('forgot_password_token: ', forgot_password_token)
     return {
-      message: USERS_MESSAGES.CHECK_EMAIL_TO_RESET_PASSWORD
+      message: USERS_MESSAGES.CHECK_EMAIL_TO_RESET_PASSWORD,
+      forgot_password_token
     }
   }
 
@@ -389,10 +368,11 @@ class UsersService {
     }
   }
 
-  async getMyProfile(user_id: string) {
+  async getProfile(user_id: string) {
     const user = await databaseService.users.findOne(
       { _id: new ObjectId(user_id) },
       {
+        // Projection: when set to 0, the field will not be returned. If set to 1, then the field will be returned.
         projection: {
           password: 0,
           forgot_password_token: 0,
@@ -401,7 +381,7 @@ class UsersService {
       }
     )
     return {
-      message: USERS_MESSAGES.GET_ME_SUCCESS,
+      message: USERS_MESSAGES.GET_PROFILE_SUCCESS,
       user
     }
   }
@@ -414,7 +394,9 @@ class UsersService {
           password: 0,
           forgot_password_token: 0,
           email_verify_token: 0,
-          verify: 0
+          verify: 0,
+          createdAt: 0,
+          updatedAt: 0
         }
       }
     )
@@ -436,7 +418,7 @@ class UsersService {
       { _id: new ObjectId(user_id) },
       {
         $set: {
-          ...(_payload as UpdateProfileRequestBody & { date_of_birth: Date })
+          ...(_payload as UpdateProfileRequestBody & { date_of_birth?: Date })
         },
         $currentDate: {
           updated_at: true
@@ -448,25 +430,27 @@ class UsersService {
           forgot_password_token: 0,
           email_verify_token: 0
         },
+        // returnDocument: 'after' dùng để trả về document sau khi update
         returnDocument: 'after'
       }
     )
     return user.value
   }
 
-  async follow(user_id: string, followed_user_id: string) {
+  async follow(user_id: string, user_id_followed: string) {
     const follower = await databaseService.followers.findOne({
       user_id: new ObjectId(user_id),
-      followed_user_id: new ObjectId(followed_user_id)
+      user_id_followed: new ObjectId(user_id_followed)
     })
 
     // Nếu user này chưa được follow trong db thì mới tiến hành insert
     if (follower === null) {
-      await databaseService.followers.insertOne({
-        user_id: new ObjectId(user_id),
-        followed_user_id: new ObjectId(followed_user_id),
-        created_at: new Date()
-      })
+      await databaseService.followers.insertOne(
+        new Followers({
+          user_id: new ObjectId(user_id),
+          user_id_followed: new ObjectId(user_id_followed)
+        })
+      )
       return {
         message: USERS_MESSAGES.FOLLOW_SUCCESS
       }
@@ -477,10 +461,10 @@ class UsersService {
     }
   }
 
-  async unFollow(user_id: string, followed_user_id: string) {
+  async unFollow(user_id: string, user_id_followed: string) {
     const follower = await databaseService.followers.findOne({
       user_id: new ObjectId(user_id),
-      followed_user_id: new ObjectId(followed_user_id)
+      user_id_followed: new ObjectId(user_id_followed)
     })
 
     // Nếu là null thì là k có trong db thì có nghĩa đã unfollow rồi
@@ -492,19 +476,19 @@ class UsersService {
     // Nếu user đã follow thì tiến hành unfollow
     await databaseService.followers.deleteOne({
       user_id: new ObjectId(user_id),
-      followed_user_id: new ObjectId(followed_user_id)
+      user_id_followed: new ObjectId(user_id_followed)
     })
     return {
       message: USERS_MESSAGES.UNFOLLOW_SUCCESS
     }
   }
 
-  async changePassword(user_id: string, password: string) {
+  async changePassword(user_id: string, new_password: string) {
     await databaseService.users.updateOne(
       { _id: new ObjectId(user_id) },
       {
         $set: {
-          password: hashPassword(password)
+          password: hashPassword(new_password)
         },
         $currentDate: {
           updated_at: true
